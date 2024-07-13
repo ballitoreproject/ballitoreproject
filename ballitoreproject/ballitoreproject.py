@@ -111,3 +111,24 @@ def merge_letters_across_pages(odf):
     odf2["supplemental_ids"] = odf2["supplemental_ids"].apply(lambda x: "; ".join(x))
     odf2[odf2.supplemental_ids.apply(len) > 0]
     return odf2
+
+
+def concordance(word, width=500, df_smpl=None):
+    if df_smpl is None: df_smpl=get_data()
+    all_words_with_ids = [(word,id) for id,txt in zip(df_smpl.index,df_smpl.txt) for word in txt.split()]
+    all_words = [w for w,id in all_words_with_ids]
+    nltk_text = nltk.Text(all_words)
+
+    o=[]
+    for match in nltk_text.concordance_list(word,lines=None, width=width):
+        match_id = all_words_with_ids[match.offset][1]
+        match_d={
+            'id':match_id,
+            'left':match.left_print,
+            'word':match.query,
+            'right':match.right_print
+        }
+        o.append(match_d)
+    pd.options.display.max_colwidth=500
+    return pd.DataFrame(o).set_index('id').join(df_smpl,how='left').drop('txt',axis=1)
+    
