@@ -1,6 +1,5 @@
 dateparser
 tomotopy
-# bertopic
 logmap
 pyLDAvis 
 orjson
@@ -11,6 +10,4 @@ ipycytoscape
 geopy
 spacy
 folium
-diskcache
-en_core_web_sm
 sqlitedict
