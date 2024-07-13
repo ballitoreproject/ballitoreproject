@@ -13,3 +13,4 @@ folium
 sqlitedict
 matplotlib
 altair
+networkx
