@@ -1,6 +1,4 @@
 from .imports import *
-import diskcache as dc
-geocache_obj = dc.Cache(os.path.join(PATH_DATA,'geocache'))
 
 @cache
 def get_nlp():
@@ -8,24 +6,28 @@ def get_nlp():
     nlp = spacy.load("en_core_web_sm")
     return nlp
 
-@geocache_obj.memoize()
-def get_named_places(text):
-    # Process the text with spaCy
+@sqlitedict_cache(PATH_NER_DATA)
+def get_ner_data_for_id(id):
+    from .ballitoreproject import get_text
     nlp = get_nlp()
+    text = get_text(id)
     doc = nlp(text)
-    
-    # Extract named entities labeled as GPE (Geopolitical Entity)
-    places = [ent.text for ent in doc.ents if ent.label_ == "GPE"]
-    
-    return places
+    return [{'ent':ent.text, 'ent_type':ent.label_} for ent in doc.ents]
+
+def get_named_places_for_id(id, ent_type='GPE'):
+    return [d['ent'] for d in get_ner_data_for_id(id) if d['ent_type'] == ent_type]
+
+def get_named_people_for_id(id, ent_type='PERSON'):
+    return [d['ent'] for d in get_ner_data_for_id(id) if d['ent_type'] == ent_type]
+
 
 @cache
 def get_geolocator():
     from geopy.geocoders import Nominatim
-    geolocator = Nominatim(user_agent="ballitoreproject")
+    geolocator = Nominatim(user_agent="ballitore")
     return geolocator
 
-@geocache_obj.memoize()
+@sqlitedict_cache(PATH_GEOLOC_DATA)
 def get_place_data(placename):
     loc = get_geolocator().geocode(placename)
     if not loc: return {}

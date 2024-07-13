@@ -27,5 +27,7 @@ PATH_STOPWORDS = os.path.join(PATH_DATA,'stopwords.txt')
 PATH_METADATA = os.path.join(PATH_DATA,'metadata')
 PATH_TXT = os.path.join(PATH_DATA,'txt')
 PATH_COMBINED = os.path.join(PATH_DATA,'combined.xlsx')
+PATH_NER_DATA=os.path.join(PATH_DATA,'ner_data.sqlitedict')
+PATH_GEOLOC_DATA=os.path.join(PATH_DATA,'geocoded_placenames.sqlitedict')
 
 from .utils import *

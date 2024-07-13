@@ -1,5 +1,9 @@
 from .imports import *
-
+import functools
+import json
+import smart_open
+import orjson
+from sqlitedict import SqliteDict
 
 @cache
 def get_stopwords():
@@ -49,3 +53,46 @@ def extract_box_number(s):
     if 'consensus' in s: return 14
     match = re.search(r'b(\d+)', s)
     return int(match.group(1)) if match else 0
+
+
+def read_json(filename):
+    try:
+        with open(cache_file, 'rb') as f:
+            cache = orjson.loads(f.read())
+    except Exception:
+        cache = {}
+    return cache
+
+CACHED={}
+def cached_read_json(filename, force=False):
+    global CACHED
+    if force or filename not in CACHED:
+        CACHED[filename]=read_json(filename)
+    return CACHED[filename]
+
+
+
+def sqlitedict_cache(filename):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            cache_file = filename
+            
+            # Create a cache key from the function name and arguments
+            key = ' '.join(str(x) for x in args)
+            
+            # Use sqlitedict for caching
+            with SqliteDict(cache_file, autocommit=True) as cache:
+                # Check if result is in cache
+                if key in cache:
+                    return cache[key]
+                
+                # If not in cache, call the function
+                result = func(*args, **kwargs)
+                
+                # Store result in cache
+                cache[key] = result
+            
+            return result
+        return wrapper
+    return decorator

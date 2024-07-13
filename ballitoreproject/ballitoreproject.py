@@ -29,8 +29,8 @@ def get_metadata():
     df["id"] = df["id"].apply(lambda x: x.strip().lower().split(".txt")[0])
     df['box'] = df['id'].apply(extract_box_number)
     df["datetime"] = df["date"].apply(str).progress_apply(dateparser.parse)
-    odf["year"] = odf["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
-    odf["decade"] = odf["year"].apply(lambda x: x // 10 * 10)
+    df["year"] = df["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
+    df["decade"] = df["year"].apply(lambda x: x // 10 * 10)
     df["is_journal"] = df.box.apply(lambda x: x in {13, 14})
     return df.set_index('id')
 
@@ -56,7 +56,7 @@ def get_txt_df():
     return pd.DataFrame(o).set_index('id')
 
 
-def get_ballitore_data(force=False):
+def get_data(force=False):
     if not force and os.path.exists(PATH_COMBINED):
         return pd.read_excel(PATH_COMBINED).set_index("id").fillna('')
 
@@ -73,6 +73,15 @@ def get_ballitore_data(force=False):
     odf.to_excel(PATH_COMBINED)
     return odf
 
+@cache
+def cached_ballitore_data():
+    return get_data()
+
+def get_text(id):
+    try:
+        return get_txt_df().loc[id].txt
+    except Exception:
+        return ''
 
 def merge_letters_across_pages(odf):
     # @title Merging letters across pages

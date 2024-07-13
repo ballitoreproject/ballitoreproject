@@ -13,3 +13,4 @@ spacy
 folium
 diskcache
 en_core_web_sm
+sqlitedict

@@ -52,7 +52,7 @@ def get_correspondence_network(df=None, incl_family_tree=True, min_num_letters=1
 
     G = nx.DiGraph() if not incl_family_tree else get_family_tree_network()
     dfx = (
-        get_ballitore_data()
+        get_data()
         .query('sender!="" & recipient!=""')
         .groupby(["sender", "recipient"])[["num_letters", "num_words"]]
         .sum()
