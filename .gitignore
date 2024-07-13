@@ -164,3 +164,4 @@ cython_debug/
 venv
 notebooks/topicmodels
 .DS_Store
+lda.html
