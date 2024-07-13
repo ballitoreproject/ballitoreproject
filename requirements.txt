@@ -11,3 +11,5 @@ geopy
 spacy
 folium
 sqlitedict
+matplotlib
+altair
