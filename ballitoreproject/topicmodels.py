@@ -11,7 +11,7 @@ class BaseTopicModel:
         'meta', 'topic_names', 'num_topics'
     ]
 
-    def __init__(self, df, text_column='txt', tokenizer=tokenize, **query_kwargs):
+    def __init__(self, df, text_column='txt', tokenizer=tokenize, ntopic=25, niter=100, **query_kwargs):
         self.df = df
         self.text_column = text_column
         self.query_kwargs = query_kwargs
@@ -22,16 +22,17 @@ class BaseTopicModel:
         self.path_topicmodels = os.path.join('topicmodels', self.model_type)
         self.paths = {}
         self.tokenizer = tokenizer
+        self.ntopic=ntopic
+        self.niter=niter
 
-    def get_paths(self, output_dir=None, ntopic=None, niter=None, lemmatize=False):
+    def get_paths(self, output_dir=None):
         if output_dir:
             path = os.path.abspath(output_dir)
         else:
             pieces = {
                 **self.query_kwargs,
-                'ntopic': ntopic,
-                'niter': niter,
-                'lemmatize': lemmatize,
+                'ntopic': self.ntopic,
+                'niter': self.niter,
             }
             def get_fn(pieces): return '.'.join(f'{k}_{v}' for k, v in pieces.items() if v)
             path = os.path.join(self.path_topicmodels, self.model_type, get_fn(pieces))
@@ -53,7 +54,7 @@ class BaseTopicModel:
         if k.startswith('path'): return self.paths.get(k)
         return None
 
-    def iter_docs(self, lim=None, as_str=False, lemmatize=False):
+    def iter_docs(self, lim=None, as_str=False):
         for idx, text in self.df[self.text_column].items():
             yield idx, self.tokenizer(text) if not as_str else text
 
@@ -65,9 +66,9 @@ class BaseTopicModel:
         if self._mdl is None: self.model()
         return self._mdl
 
-    def init_docs(self, lim=None, force=False, lemmatize=False, as_str=False):
+    def init_docs(self, lim=None, force=False, as_str=False):
         if force or self._id_docs is None:
-            self._id_docs = list(self.iter_docs(lim=lim, lemmatize=lemmatize, as_str=as_str))
+            self._id_docs = list(self.iter_docs(lim=lim, as_str=as_str))
         return self.docs
 
     @cached_property
@@ -89,10 +90,10 @@ class BaseTopicModel:
 class TomotopyTopicModel(BaseTopicModel):
     model_type = 'tomotopy'
 
-    def model(self, output_dir=None, force=False, lim=None, lemmatize=False, ntopic=25, niter=100):
+    def model(self, output_dir=None, force=False, lim=None):
         with logmap('loading or modeling LDA model') as lw:
             # Get filename
-            pathd = self.get_paths(output_dir=output_dir, ntopic=ntopic, niter=niter, lemmatize=lemmatize)
+            pathd = self.get_paths(output_dir=output_dir, ntopic=self.ntopic, niter=self.niter)
             fdir = pathd['path']
             os.makedirs(fdir, exist_ok=True)
             fn = pathd['path_model']
@@ -106,7 +107,7 @@ class TomotopyTopicModel(BaseTopicModel):
 
             # Save or load
             if force or not os.path.exists(fn) or not os.path.exists(fnindex):
-                mdl = self.mdl = tp.LDAModel(k=ntopic)
+                mdl = self.mdl = tp.LDAModel(k=self.ntopic)
                 docd = self.id2index = {}
                 for doc_id, doc_tokens in self.iter_docs():
                     docd[doc_id] = mdl.add_doc(doc_tokens)
@@ -114,7 +115,7 @@ class TomotopyTopicModel(BaseTopicModel):
                 def getdesc():
                     return f'{lw.inner_pref}training model (ndocs={len(docd)}, log-likelihood = {mdl.ll_per_word:.4})'
 
-                pbar = lw.iter_progress(list(range(0, niter, 1)), desc=getdesc(), position=0)
+                pbar = lw.iter_progress(list(range(0, self.niter, 1)), desc=getdesc(), position=0)
                 for i in pbar:
                     lw.set_progress_desc(getdesc())
                     mdl.train(1)
@@ -126,10 +127,9 @@ class TomotopyTopicModel(BaseTopicModel):
 
                 params = {
                     **dict(
-                        ntopic=ntopic,
-                        niter=niter,
+                        ntopic=self.ntopic,
+                        niter=self.niter,
                         lim=lim,
-                        lemmatize=lemmatize
                     ),
                     **self.query_kwargs
                 }
@@ -204,7 +204,7 @@ class TomotopyTopicModel(BaseTopicModel):
     def meta(self): return self.df
 
     @cached_property
-    def topic_names(self, top_n=25):
+    def topic_names(self, top_n=10):
         d = {}
         for topic_id in range(self.mdl.k):
             d[topic_id] = f'Topic {topic_id}: {" ".join(w for w, c in self.mdl.get_topic_words(topic_id, top_n=top_n))}'
@@ -238,7 +238,7 @@ class BertTopicModel(BaseTopicModel):
         )
         return embedding_model
 
-    def model(self, output_dir=None, force=False, lim=None, save=True, embedding_model=None, lemmatize=True, **kwargs):
+    def model(self, output_dir=None, force=False, lim=None, save=True, embedding_model=None, **kwargs):
         with logmap('loading or generating model'):
             # Get filename
             pathd = self.get_paths(output_dir=output_dir)

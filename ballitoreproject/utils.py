@@ -21,7 +21,7 @@ def tokenize(txt, stopwords=None):
         return re.sub(r"\[[^\]]*\]", "", text)
 
     def is_stopword(word):
-        return not word or word.lower() in stopwords or not word[0].isalpha() or word[0].isdigit()
+        return not word or word.lower() in stopwords or not word[0].isalpha() or word[0].isdigit() or len(word)<3
 
     tokens = re.findall(r"[\w']+|[.,!?; -—–\n]", remove_bracket_text(txt).lower())
     return [word for word in tokens if not is_stopword(word)]
@@ -44,3 +44,8 @@ def ensure_dir(file_path):
 def default_tokenize(txt):
     tokens = re.findall(r"[\w']+|[.,!?; -—–\n]", txt.lower())
     return tokens
+
+def extract_box_number(s):
+    if 'consensus' in s: return 14
+    match = re.search(r'b(\d+)', s)
+    return int(match.group(1)) if match else 0

@@ -1,9 +1,15 @@
 dateparser
 tomotopy
-bertopic
+# bertopic
 logmap
 pyLDAvis 
 orjson
 nltk
 openpyxl
 nbformat
+ipycytoscape
+geopy
+spacy
+folium
+diskcache
+en_core_web_sm

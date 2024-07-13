@@ -23,20 +23,20 @@ def get_metadata():
             df = pd.read_excel(os.path.join(PATH_METADATA, fn))
             df.columns = [fix_col(c) for c in df]
             df = df[[c for c in df if c != "year"]]
-            fnnums = [x for x in fn.split() if x.isdigit()]
-            df["box"] = int(fnnums[0]) if fnnums else 0
             o.append(df)
 
     df = pd.concat(o).fillna("")
     df["id"] = df["id"].apply(lambda x: x.strip().lower().split(".txt")[0])
+    df['box'] = df['id'].apply(extract_box_number)
     df["datetime"] = df["date"].apply(str).progress_apply(dateparser.parse)
-    df["dateyear"] = df["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
+    odf["year"] = odf["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
+    odf["decade"] = odf["year"].apply(lambda x: x // 10 * 10)
     df["is_journal"] = df.box.apply(lambda x: x in {13, 14})
-    return df
+    return df.set_index('id')
 
 
 @cache
-def get_df_txt():
+def get_txt_df():
     paths_txt = [
         os.path.join(root, fn)
         for root, dirs, fns in os.walk(PATH_TXT)
@@ -44,42 +44,27 @@ def get_df_txt():
         if fn.endswith(".txt")
     ]
 
-    o = []
+    o=[]
     for fnfn in tqdm(sorted(paths_txt), desc="Reading txt files"):
         with open(fnfn) as f:
             txt = f.read()
-        o.append({"id": os.path.basename(fnfn).split(".txt")[0].lower(), "txt": txt})
-    df_txt = pd.DataFrame(o).drop_duplicates("id")
-    return df_txt
+        d={
+            'id':os.path.basename(fnfn).split(".txt")[0].lower(),
+            'txt': txt.strip()
+        }
+        o.append(d)
+    return pd.DataFrame(o).set_index('id')
 
 
-def get_data(force=False):
+def get_ballitore_data(force=False):
     if not force and os.path.exists(PATH_COMBINED):
         return pd.read_excel(PATH_COMBINED).set_index("id").fillna('')
 
-    df = get_metadata()
-    df_txt = get_df_txt()
-    odf = df.merge(df_txt, on="id", how="outer").fillna("").set_index("id")
-    odf["dateyear"] = odf["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
+    odf = get_metadata().join(get_txt_df(),how='outer').fillna('')
+    odf["year"] = odf["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
+    odf["decade"] = odf["year"].apply(lambda x: x // 10 * 10)
 
-    def getboxnum(x, box):
-        if box:
-            return box
-        if "consensus" in x:
-            return 14
-        o = []
-        ok = False
-        for y in x:
-            if ok and y.isdigit():
-                o.append(y)
-            if y == "b":
-                ok = True
-            elif not y.isdigit():
-                ok = False
-        return int("".join(o))
-
-    odf["box"] = [getboxnum(x, y) for x, y in zip(odf.index, odf.box)]
-    odf["box"] = odf["box"].apply(int)
+    odf["box"] = [extract_box_number(x) for x in odf.index]
     odf["is_journal"] = odf.box.apply(lambda x: x in {13, 14})
     odf = merge_letters_across_pages(odf)
     odf = odf.sort_values(["box", "datetime"])
