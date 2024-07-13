@@ -32,6 +32,7 @@ def get_metadata():
     df["year"] = df["datetime"].apply(lambda x: x.year if x.year > 0 else 0)
     df["decade"] = df["year"].apply(lambda x: x // 10 * 10)
     df["is_journal"] = df.box.apply(lambda x: x in {13, 14})
+    df['sender_recip']=[f'{x if x else "?"} to {y if y else "?"}' if x or y else '?' for x,y in zip(df.sender, df.recipient)]
     return df.set_index('id')
 
 
