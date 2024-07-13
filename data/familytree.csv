@@ -1,0 +1,19 @@
+person1,relationship,person2
+Richard Shackleton,married,Elizabeth Fuller Shackleton
+Richard Shackleton,married,Elizabeth Carleton Shackleton
+Elizabeth Fuller Shackleton,parented,Margaret Grubb
+Elizabeth Fuller Shackleton,parented,Deborah Chandlee
+Richard Shackleton,parented,Margaret Grubb
+Richard Shackleton,parented,Deborah Chandlee
+Richard Shackleton,parented,Mary Leadbeater
+Richard Shackleton,parented,Sarah Shackleton
+Richard Shackleton,parented,Abraham Shackleton
+Elizabeth Carleton Shackleton,parented,Mary Leadbeater
+Elizabeth Carleton Shackleton,parented,Sarah Shackleton
+Elizabeth Carleton Shackleton,parented,Abraham Shackleton
+Mary Leadbeater,married,William Leadbeater
+Mary Leadbeater,parented,Sarah Barrington
+William Leadbeater,parented,Sarah Barrington
+Sarah Barrington,married,Edward Barrington
+Sarah Barrington,parented,Margaret Davis
+Edward Barrington,parented,Margaret Davis
